@@ -1,3 +1,3 @@
 # WeatherBot
-# A Telegram bot helping you to check the weather
+## A Telegram bot helping you to check the weather
 

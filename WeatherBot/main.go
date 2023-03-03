@@ -7,7 +7,8 @@ import (
 	"net/http"
 	"os"
 
-	
+	"github.com/joho/godotenv"
+	"gopkg.in/telegram-bot-api.v4"
 )
 
 const (
@@ -31,13 +32,13 @@ func main() {
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 
 	// Set up a webhook to receive updates
-	_, err = bot.SetWebhook(tgbotapi.NewWebhook(os.Getenv("NGROK_URL") + webhookURL + "/" + bot.Token))
+	_, err = bot.SetWebhook(tgbotapi.NewWebhook(os.Getenv("WEBHOOK_URL") + webhookURL))
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Create a new HTTP server to listen for updates
-	http.HandleFunc(webhookURL+"/"+bot.Token, func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc(webhookURL, func(w http.ResponseWriter, r *http.Request) {
 		update := tgbotapi.Update{}
 		err := json.NewDecoder(r.Body).Decode(&update)
 		if err != nil {
@@ -60,7 +61,11 @@ func main() {
 
 			// Send the weather as a message
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, weather)
-			bot.Send(msg)
+			_, err = bot.Send(msg)
+			if err != nil {
+				log.Println(err)
+				return
+			}
 		}
 	})
 

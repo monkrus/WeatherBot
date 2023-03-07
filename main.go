@@ -45,7 +45,16 @@ func main() {
 			// Make the API request and get the response
 			resp, err := client.Get(url)
 			if err != nil {
-				bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Sorry, an error occurred. Please try again later."))
+				log.Println(err)
+				_, err = bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Sorry, an error occurred. Please try again later."))
+				if err != nil {
+					log.Println(err)
+				}
+				//---
+				//resp, err := client.Get(url)
+				//if err != nil {
+				//	bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Sorry, an error occurred. Please try again later."))
+				//---
 				continue
 			}
 			defer resp.Body.Close()
@@ -53,7 +62,12 @@ func main() {
 			// Parse the response JSON and get the temperature and description
 			body, err := io.ReadAll(resp.Body)
 			if err != nil {
-				bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Sorry, an error occurred. Please try again later."))
+				log.Println(err)
+				_, err = bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Sorry, an error occurred. Please try again later."))
+				if err != nil {
+					log.Println(err)
+				}
+				//bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Sorry, an error occurred. Please try again later."))
 				continue
 			}
 			temp := gjson.GetBytes(body, "main.temp").Float()
@@ -65,7 +79,10 @@ func main() {
 
 			// Send the weather forecast to the user
 			message := "The temperature in " + location + " is " + tempStr + "°C and the weather is " + desc + "."
-			bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, message))
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, message)
+			if _, err := bot.Send(msg); err != nil {
+				log.Println(err)
+			}
 		}
 	}
 

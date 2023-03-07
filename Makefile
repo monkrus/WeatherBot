@@ -1,4 +1,13 @@
-TELEGRAM_BOT_TOKEN=6094159006:AAFes1V6GiTaZfpXcycFgKC034dRxZW-nio
-WEBHOOK_URL=https://2cdc-2600-8800-168e-6f00-946a-2120-a588-de88.ngrok.io 
-OPENWEATHERMAP_API_KEY=036f43096cf8e4a742a94004c0fb8b82
+BOT_TOKEN=your_telegram_bot_token_here
+WEATHER_API_KEY=your_openweathermap_api_key_here
 
+build:
+	go build -o bot main.go
+
+run:
+	go run main.go
+
+clean:
+	rm -f bot
+
+.PHONY: build run clean

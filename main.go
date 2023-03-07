@@ -1,105 +1,74 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
+	"io"
 	"log"
 	"net/http"
-	"os"
+	"strconv"
+	"strings"
 
-	"github.com/joho/godotenv"
-	"gopkg.in/telegram-bot-api.v4"
-)
-
-const (
-	webhookURL        = "/webhook"
-	openWeatherMapURL = "https://api.openweathermap.org/data/2.5/weather"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"github.com/tidwall/gjson"
 )
 
 func main() {
-	// Load environment variables
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-
-	// Create a new bot instance
-	bot, err := tgbotapi.NewBotAPI(os.Getenv("TELEGRAM_BOT_TOKEN"))
+	// Replace YOUR_TELEGRAM_BOT_TOKEN with your actual bot token
+	bot, err := tgbotapi.NewBotAPI("6298432449:AAFefsa7SWWBeOuenk6w-wll2ioW6G42Djc")
 	if err != nil {
 		log.Panic(err)
 	}
 
-	log.Printf("Authorized on account %s", bot.Self.UserName)
+	// Replace YOUR_OPENWEATHERMAP_API_KEY with your actual API key
+	apiKey := "df2ea56fc8cca21e38e1ffab4894fb61"
 
-	// Set up a webhook to receive updates
-	_, err = bot.SetWebhook(tgbotapi.NewWebhook(os.Getenv("WEBHOOK_URL") + webhookURL))
+	// Set up an HTTP client to make API requests to OpenWeatherMap
+	client := &http.Client{}
+
+	// Set up a message handler for the /weather command
+	updates, err := bot.GetUpdatesChan(tgbotapi.UpdateConfig{Timeout: 60})
 	if err != nil {
-		log.Fatal(err)
+		log.Panic(err)
 	}
 
-	// Create a new HTTP server to listen for updates
-	http.HandleFunc(webhookURL, func(w http.ResponseWriter, r *http.Request) {
-		update := tgbotapi.Update{}
-		err := json.NewDecoder(r.Body).Decode(&update)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
+	for update := range updates {
 		if update.Message == nil {
-			return
+			continue
 		}
 
-		// Check if the message is a location
-		if update.Message.Location != nil {
-			// Get the weather for the location
-			weather, err := getWeather(update.Message.Location.Latitude, update.Message.Location.Longitude, os.Getenv("OPENWEATHERMAP_API_KEY"))
-			if err != nil {
-				log.Println(err)
-				return
-			}
+		if strings.HasPrefix(update.Message.Text, "/weather") {
+			// Get the location from the message text
+			location := strings.TrimSpace(strings.TrimPrefix(update.Message.Text, "/weather"))
 
-			// Send the weather as a message
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, weather)
-			_, err = bot.Send(msg)
+			// Build the API request URL
+			url := "https://api.openweathermap.org/data/2.5/weather?q=" + location + "&appid=" + apiKey
+
+			// Make the API request and get the response
+			resp, err := client.Get(url)
 			if err != nil {
-				log.Println(err)
-				return
+				bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Sorry, an error occurred. Please try again later."))
+				continue
 			}
+			defer resp.Body.Close()
+
+			// Parse the response JSON and get the temperature and description
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Sorry, an error occurred. Please try again later."))
+				continue
+			}
+			temp := gjson.GetBytes(body, "main.temp").Float()
+			desc := gjson.GetBytes(body, "weather.0.description").String()
+
+			// Convert the temperature from Kelvin to Celsius and format it
+			tempC := temp - 273.15
+			tempStr := strconv.FormatFloat(tempC, 'f', 1, 64)
+
+			// Send the weather forecast to the user
+			message := "The temperature in " + location + " is " + tempStr + "°C and the weather is " + desc + "."
+			bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, message))
 		}
-	})
-
-	// Start the HTTP server
-	log.Fatal(http.ListenAndServe(":8080", nil))
-}
-
-func getWeather(lat, long float64, apiKey string) (string, error) {
-	// Build the URL for the OpenWeatherMap API request
-	url := fmt.Sprintf("%s?lat=%f&lon=%f&appid=%s", openWeatherMapURL, lat, long, apiKey)
-
-	// Send the request and parse the response
-	resp, err := http.Get(url)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("openweathermap API returned non-200 status code: %d", resp.StatusCode)
 	}
 
-	var weatherResp struct {
-		Main struct {
-			Temp float64 `json:"temp"`
-		} `json:"main"`
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&weatherResp); err != nil {
-		return "", err
-	}
-
-	// Convert temperature from Kelvin to Celsius
-	temperature := weatherResp.Main.Temp - 273.15
-
-	return fmt.Sprintf("The weather for your location is %.1f°C", temperature), nil
+	// Start the bot
+	log.Printf("Starting bot %s", bot.Self.UserName)
 }

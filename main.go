@@ -30,6 +30,9 @@ func main() {
 		log.Panic(err)
 	}
 
+	// Defer the closing of the HTTP client at the end of the function
+	defer client.CloseIdleConnections()
+
 	for update := range updates {
 		if update.Message == nil {
 			continue
@@ -50,14 +53,8 @@ func main() {
 				if err != nil {
 					log.Println(err)
 				}
-				//---
-				//resp, err := client.Get(url)
-				//if err != nil {
-				//	bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Sorry, an error occurred. Please try again later."))
-				//---
 				continue
 			}
-			defer resp.Body.Close()
 
 			// Parse the response JSON and get the temperature and description
 			body, err := io.ReadAll(resp.Body)

@@ -4,22 +4,41 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"github.com/joho/godotenv"
 	"github.com/tidwall/gjson"
 )
 
 func main() {
-	// Replace YOUR_TELEGRAM_BOT_TOKEN with your actual bot token
-	bot, err := tgbotapi.NewBotAPI("6298432449:AAFefsa7SWWBeOuenk6w-wll2ioW6G42Djc")
+	path_dir, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	envFile := filepath.Join(path_dir, ".env")
+	log.Println("Loading", envFile, "file...")
+
+	err = godotenv.Load(envFile)
+	if err != nil {
+		log.Fatal("Error loading .env file:", err)
+	}
+
+	botToken := os.Getenv("BOT_TOKEN")
+	apiKey := os.Getenv("API_KEY")
+
+	// Replace BOT_TOKEN with your actual bot token
+	bot, err := tgbotapi.NewBotAPI(botToken)
 	if err != nil {
 		log.Panic(err)
 	}
 
 	// Replace YOUR_OPENWEATHERMAP_API_KEY with your actual API key
-	apiKey := "df2ea56fc8cca21e38e1ffab4894fb61"
+	//apiKey := "API_KEY"
 
 	// Set up an HTTP client to make API requests to OpenWeatherMap
 	client := &http.Client{}
@@ -79,10 +98,8 @@ func main() {
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, message)
 			if _, err := bot.Send(msg); err != nil {
 				log.Println(err)
+
 			}
 		}
 	}
-
-	// Start the bot
-	log.Printf("Starting bot %s", bot.Self.UserName)
 }

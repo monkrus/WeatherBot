@@ -15,6 +15,7 @@ import (
 )
 
 func main() {
+	
 	path_dir, err := os.Getwd()
 	if err != nil {
 		log.Fatal(err)
@@ -37,14 +38,11 @@ func main() {
 		log.Panic(err)
 	}
 
-	// Replace YOUR_OPENWEATHERMAP_API_KEY with your actual API key
-	//apiKey := "API_KEY"
-
 	// Set up an HTTP client to make API requests to OpenWeatherMap
 	client := &http.Client{}
 
 	// Set up a message handler for the /weather command
-	updates, err := bot.GetUpdatesChan(tgbotapi.UpdateConfig{Timeout: 60})
+	updates, err := bot.GetUpdatesChan(tgbotapi.UpdateConfig{Timeout: 150})
 	if err != nil {
 		log.Panic(err)
 	}
@@ -100,6 +98,7 @@ func main() {
 				log.Println(err)
 
 			}
+			
 		}
 	}
 }

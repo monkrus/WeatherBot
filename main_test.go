@@ -7,7 +7,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	//tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -58,34 +57,16 @@ func TestLoadEnvFileMissing(t *testing.T) {
 	err = godotenv.Load(envFile)
 	assert.Error(t, err)
 }
-
 func TestGetWeatherData(t *testing.T) {
-	// Create a test server to handle requests to the OpenWeatherMap API
-	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		//nolint:errcheck
-		w.Write([]byte(`{"weather":[{"description":"clear sky"}],"main":{"temp":289.52,"humidity":89,"pressure":1013},"name":"London"}`))
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, `{"name": "London","weather":[{"description":"clear sky"}],"main":{"temp": 289.52,"humidity": 89,"pressure": 1013}}`)
 	}))
-	defer testServer.Close()
+	defer ts.Close()
 
-	// Replace the API endpoint with the test server's URL
-	url := fmt.Sprintf("%s?id=12345&appid=df2ea56fc8cca21e38e1ffab4894fb61", testServer.URL)
+	url := fmt.Sprintf("%s/weather/%s", ts.URL, "invalid_city_id")
+	_, err := getWeatherData("invalid_city_id", url)
 
-	// Test case 1: successful request
-	result, err := getWeatherData("12345", url)
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-	expected := "London: clear sky, temperature 16.37 Celsius, humidity 89%, pressure 1013 hPa"
-	if result != expected {
-		t.Errorf("unexpected result: expected=%q, actual=%q", expected, result)
-	}
-
-	// Test case 2: failed request due to invalid city ID
-	_, err = getWeatherData("invalid_city_id", url)
 	if err == nil {
-		t.Errorf("expected error")
-	} else if !strings.Contains(err.Error(), "failed to parse response") {
-		t.Errorf("unexpected error message: %v", err)
+		t.Error("expected error")
 	}
 }

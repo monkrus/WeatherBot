@@ -14,8 +14,10 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+
+
 func main() {
-	
+
 	path_dir, err := os.Getwd()
 	if err != nil {
 		log.Fatal(err)
@@ -98,7 +100,7 @@ func main() {
 				log.Println(err)
 
 			}
-			
+
 		}
 	}
 }

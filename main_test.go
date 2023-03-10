@@ -63,7 +63,7 @@ func TestGetWeatherData(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	url := fmt.Sprintf("%s/weather/%s", ts.URL, "invalid_city_id")
+	url := fmt.Sprintf("%s/weather/%s", port, "invalid_city_id")
 	_, err := getWeatherData("invalid_city_id", url)
 
 	if err == nil {

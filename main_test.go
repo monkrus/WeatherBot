@@ -76,11 +76,10 @@ func TestGetWeatherData(t *testing.T) {
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
-	expectedResult := "London: clear sky, temperature 289.52 Kelvin, humidity 89%, pressure 1013 hPa"
-	if result != expectedResult {
-		t.Errorf("unexpected result: expected '%s', but got '%s'", expectedResult, result)
+	expected := "London: clear sky, temperature 16.37 Celsius, humidity 89%, pressure 1013 hPa"
+	if result != expected {
+		t.Errorf("unexpected result: expected=%q, actual=%q", expected, result)
 	}
-	fmt.Printf("Actual result: '%s'\n", result)
 
 	// Test case 2: failed request due to invalid city ID
 	_, err = getWeatherData("invalid_city_id", url)
